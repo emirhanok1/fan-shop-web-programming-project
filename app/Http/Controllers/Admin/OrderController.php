@@ -13,7 +13,8 @@ class OrderController extends Controller
      */
     public function index()
     {
-        // To be implemented
+        $orders = Order::with('user')->latest()->paginate(15);
+        return view('admin.orders.index', compact('orders'));
     }
 
     /**
@@ -21,7 +22,8 @@ class OrderController extends Controller
      */
     public function show(Order $order)
     {
-        // To be implemented
+        $order->load(['user', 'items.product', 'tracking']);
+        return view('admin.orders.show', compact('order'));
     }
 
     /**
@@ -29,7 +31,21 @@ class OrderController extends Controller
      */
     public function approve(Order $order)
     {
-        // To be implemented
+        if ($order->status === 'pending') {
+            $order->update(['status' => 'approved']);
+            
+            // Initialize tracking at step 1 if not exists
+            if (!$order->tracking) {
+                $order->tracking()->create([
+                    'step' => 'preparing',
+                    'description' => 'Siparişiniz hazırlanıyor.',
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Sipariş onaylandı.');
+        }
+
+        return redirect()->back()->with('error', 'Sipariş onaylanamaz.');
     }
 
     /**
@@ -37,7 +53,29 @@ class OrderController extends Controller
      */
     public function advance(Order $order)
     {
-        // To be implemented
+        if ($order->tracking) {
+            $steps = ['preparing', 'shipped', 'delivered', 'completed'];
+            $currentStep = $order->tracking->step;
+            $currentIndex = array_search($currentStep, $steps);
+
+            if ($currentIndex !== false && $currentIndex < count($steps) - 1) {
+                $nextStep = $steps[$currentIndex + 1];
+                
+                $order->tracking->update([
+                    'step' => $nextStep,
+                    'description' => $this->getStepDescription($nextStep),
+                ]);
+
+                // If completed, update order status to confirmed
+                if ($nextStep === 'completed') {
+                    $order->update(['status' => 'confirmed']);
+                }
+
+                return redirect()->back()->with('success', 'Takip aşaması güncellendi.');
+            }
+        }
+
+        return redirect()->back()->with('error', 'Takip aşaması güncellenemez.');
     }
 
     /**
@@ -45,6 +83,36 @@ class OrderController extends Controller
      */
     public function reject(Order $order)
     {
-        // To be implemented
+        if (in_array($order->status, ['pending', 'approved'])) {
+            $order->update(['status' => 'cancelled']);
+            
+            // Refund user if balance was used
+            if ($order->balance_used > 0) {
+                $user = $order->user;
+                $user->increment('balance', $order->balance_used);
+                
+                $user->transactions()->create([
+                    'amount' => $order->balance_used,
+                    'type' => 'refund',
+                    'description' => '#' . $order->id . ' nolu sipariş iptal iadesi.',
+                    'order_id' => $order->id
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Sipariş iptal edildi.');
+        }
+
+        return redirect()->back()->with('error', 'Sipariş iptal edilemez.');
+    }
+
+    private function getStepDescription(string $step): string
+    {
+        return match($step) {
+            'preparing' => 'Siparişiniz hazırlanıyor.',
+            'shipped' => 'Siparişiniz kargoya verildi.',
+            'delivered' => 'Siparişiniz teslim edildi.',
+            'completed' => 'Siparişiniz tamamlandı.',
+            default => 'Sipariş süreci devam ediyor.',
+        };
     }
 }

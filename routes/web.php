@@ -75,6 +75,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Products Management
     Route::resource('products', AdminProductController::class);
     Route::post('/products/{product}/toggle', [AdminProductController::class, 'toggle'])->name('products.toggle');
+    Route::delete('/products/images/{productImage}', [AdminProductController::class, 'deleteImage'])->name('products.delete-image');
     Route::post('/tmdb-search', [AdminProductController::class, 'tmdbSearch'])->name('tmdb.search');
 
     // Users Management

@@ -5,15 +5,39 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
+use App\Models\Category;
+use App\Models\ProductImage;
+use App\Http\Requests\Admin\StoreProductRequest;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
+use Intervention\Image\Laravel\Facades\Image;
 
 class ProductController extends Controller
 {
     /**
      * Display a listing of products.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // To be implemented
+        $categories = Category::all();
+        $query = Product::with(['category', 'productImages']);
+
+        if ($request->filled('q')) {
+            $query->where('name', 'like', '%' . $request->q . '%');
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->filled('franchise')) {
+            $query->where('franchise', 'like', '%' . $request->franchise . '%');
+        }
+
+        $products = $query->latest()->paginate(15)->withQueryString();
+
+        return view('admin.products.index', compact('products', 'categories'));
     }
 
     /**
@@ -21,15 +45,52 @@ class ProductController extends Controller
      */
     public function create()
     {
-        // To be implemented
+        $categories = Category::all();
+        return view('admin.products.create', compact('categories'));
     }
 
     /**
      * Store a newly created product in storage.
      */
-    public function store(Request $request)
+    public function store(StoreProductRequest $request)
     {
-        // To be implemented
+        $product = Product::create([
+            'name' => $request->name,
+            'slug' => Str::slug($request->name),
+            'category_id' => $request->category_id,
+            'franchise' => $request->franchise,
+            'description' => $request->description,
+            'price' => $request->price,
+            'stock' => $request->stock,
+            'tmdb_id' => $request->tmdb_id,
+            'tmdb_type' => $request->tmdb_type,
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+
+        if ($request->hasFile('images')) {
+            $images = $request->file('images');
+            Storage::disk('public')->makeDirectory('products');
+
+            foreach ($images as $index => $imageFile) {
+                // Resize and encode
+                $img = Image::read($imageFile);
+                $img->scaleDown(width: 1024);
+                $encoded = $img->toWebp(80);
+
+                // Save file
+                $fileName = Str::uuid() . '.webp';
+                $filePath = 'products/' . $fileName;
+                Storage::disk('public')->put($filePath, $encoded->toString());
+
+                // Create record
+                $product->productImages()->create([
+                    'image_path' => 'storage/' . $filePath,
+                    'is_primary' => ($index === 0),
+                ]);
+            }
+        }
+
+        return redirect()->route('admin.products.index')->with('success', 'Ürün başarıyla oluşturuldu.');
     }
 
     /**
@@ -37,7 +98,7 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        // To be implemented
+        return view('admin.products.show', compact('product'));
     }
 
     /**
@@ -45,15 +106,55 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
-        // To be implemented
+        $categories = Category::all();
+        return view('admin.products.edit', compact('product', 'categories'));
     }
 
     /**
      * Update the specified product in storage.
      */
-    public function update(Request $request, Product $product)
+    public function update(StoreProductRequest $request, Product $product)
     {
-        // To be implemented
+        $product->update([
+            'name' => $request->name,
+            'slug' => Str::slug($request->name),
+            'category_id' => $request->category_id,
+            'franchise' => $request->franchise,
+            'description' => $request->description,
+            'price' => $request->price,
+            'stock' => $request->stock,
+            'tmdb_id' => $request->tmdb_id,
+            'tmdb_type' => $request->tmdb_type,
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+
+        if ($request->hasFile('images')) {
+            $images = $request->file('images');
+            Storage::disk('public')->makeDirectory('products');
+
+            $hasPrimary = $product->productImages()->where('is_primary', true)->exists();
+
+            foreach ($images as $index => $imageFile) {
+                // Resize and encode
+                $img = Image::read($imageFile);
+                $img->scaleDown(width: 1024);
+                $encoded = $img->toWebp(80);
+
+                // Save file
+                $fileName = Str::uuid() . '.webp';
+                $filePath = 'products/' . $fileName;
+                Storage::disk('public')->put($filePath, $encoded->toString());
+
+                // Create record
+                $product->productImages()->create([
+                    'image_path' => 'storage/' . $filePath,
+                    'is_primary' => (!$hasPrimary && $index === 0),
+                ]);
+                $hasPrimary = true;
+            }
+        }
+
+        return redirect()->route('admin.products.index')->with('success', 'Ürün başarıyla güncellendi.');
     }
 
     /**
@@ -61,7 +162,15 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        // To be implemented
+        foreach ($product->productImages as $image) {
+            $relativeStoragePath = str_replace('storage/', '', $image->image_path);
+            Storage::disk('public')->delete($relativeStoragePath);
+            $image->delete();
+        }
+
+        $product->delete();
+
+        return redirect()->route('admin.products.index')->with('success', 'Ürün başarıyla silindi.');
     }
 
     /**
@@ -69,7 +178,13 @@ class ProductController extends Controller
      */
     public function toggle(Product $product)
     {
-        // To be implemented
+        $product->is_active = !$product->is_active;
+        $product->save();
+
+        return response()->json([
+            'success' => true,
+            'is_active' => $product->is_active
+        ]);
     }
 
     /**
@@ -77,6 +192,64 @@ class ProductController extends Controller
      */
     public function tmdbSearch(Request $request)
     {
-        // To be implemented
+        $query = $request->input('q');
+        $token = config('services.tmdb.key');
+
+        if (empty($query) || empty($token)) {
+            return response()->json([]);
+        }
+
+        try {
+            $response = Http::withToken($token)
+                ->timeout(5)
+                ->get('https://api.themoviedb.org/3/search/multi', [
+                    'query' => $query,
+                    'language' => 'tr-TR'
+                ]);
+
+            if ($response->successful()) {
+                $results = collect($response->json()['results'] ?? [])
+                    ->take(5)
+                    ->map(function ($item) {
+                        return [
+                            'id' => $item['id'],
+                            'title' => $item['title'] ?? $item['name'] ?? 'Bilinmeyen Başlık',
+                            'poster_path' => $item['poster_path'] ? 'https://image.tmdb.org/t/p/w92' . $item['poster_path'] : null,
+                            'media_type' => $item['media_type'] ?? 'movie'
+                        ];
+                    });
+                return response()->json($results);
+            }
+        } catch (\Exception $e) {
+            // Graceful failure
+        }
+
+        return response()->json([]);
+    }
+
+    /**
+     * Delete a specific product image.
+     */
+    public function deleteImage(ProductImage $productImage)
+    {
+        $product = $productImage->product;
+        $isPrimary = $productImage->is_primary;
+
+        // Delete from storage
+        $relativeStoragePath = str_replace('storage/', '', $productImage->image_path);
+        Storage::disk('public')->delete($relativeStoragePath);
+        
+        // Delete from database
+        $productImage->delete();
+
+        // Reassign primary image if the deleted one was primary
+        if ($isPrimary) {
+            $nextImage = $product->productImages()->first();
+            if ($nextImage) {
+                $nextImage->update(['is_primary' => true]);
+            }
+        }
+
+        return response()->json(['success' => true]);
     }
 }
