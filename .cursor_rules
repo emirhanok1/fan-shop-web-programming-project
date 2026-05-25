@@ -1,0 +1,49 @@
+# PROJECT: FanStore - Film & TV Series Merchandise E-Commerce
+# FRAMEWORK: Laravel 11 (PHP 8.2+)
+# DATABASE: MySQL
+# FRONTEND: Bootstrap 5.3 + AdminLTE 3 (modular CSS from dist/css/alt/)
+
+## CODING RULES
+- Always use Laravel 11 syntax (bootstrap/app.php middleware, NOT Kernel.php)
+- Never use env() directly in code — always use config() helper
+- All middleware registered via withMiddleware() in bootstrap/app.php
+- Use Bootstrap 5.3 data attributes: data-bs-toggle, data-bs-dismiss (NOT data-toggle)
+- AdminLTE: use modular CSS files from dist/css/alt/ to avoid Bootstrap conflicts
+- All API keys stored in .env and mapped through config/services.php
+- Images: always use Intervention Image v3 (intervention/image-laravel)
+- Image storage: Storage::disk('public')->put(path, (string)$encoded)
+- File uploads: validate with File::image() NOT just mimes rule
+- TMDB API: use Bearer Token in Authorization header (NOT api_key query param)
+- TMDB TV shows use 'name' field (NOT 'title') — movies use 'title'
+- Google Maps: use new PlaceAutocompleteElement API with gmp-select event
+- Always use UUID for uploaded file names (Str::uuid()->toString())
+- Order tracking states (enum): sourcing, packaging, shipped, on_the_way, delivered
+- Balance logic: always deduct from user balance first, then charge card for remainder
+- Cancelled orders: refund goes to user balance (NOT credit card), log in transactions table
+- AppServiceProvider: add URL::forceScheme('https') for production
+- All Blade forms must have @csrf
+- Admin routes protected by 'admin' middleware alias
+- Use soft deletes where appropriate
+- All controllers use Form Request classes for validation
+- Database: follow 3NF normalization
+
+## FOLDER STRUCTURE RULES
+- Services in app/Services/ (TMDBService, WeatherService, MapsService)
+- Form Requests in app/Http/Requests/
+- Admin controllers in app/Http/Controllers/Admin/
+- User controllers in app/Http/Controllers/User/
+
+## DEPLOYMENT (Railway.app)
+- nixpacks.toml must set NIXPACKS_PHP_ROOT_DIR = '/app/public'
+- Volume mount path: /app/storage
+- LOG_CHANNEL=stderr in production
+- Never hardcode credentials
+
+## DO NOT
+- Never use Kernel.php (removed in Laravel 11)
+- Never use data-toggle (Bootstrap 4, use data-bs-toggle)
+- Never use ml-*, mr-*, pl-*, pr-* Bootstrap classes (use ms-*, me-*, ps-*, pe-*)
+- Never call env() outside of config files
+- Never store uploaded files with original filenames
+- Never skip server-side validation
+- Never put API keys in frontend JS directly (use Blade + config())
