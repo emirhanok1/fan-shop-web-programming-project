@@ -26,6 +26,15 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        View::share('cartCount', 0);
+        View::composer('layouts.app', function ($view) {
+            $cartCount = 0;
+            if (auth()->check()) {
+                $cart = auth()->user()->cart;
+                $cartCount = $cart
+                    ? $cart->items()->sum('quantity')
+                    : 0;
+            }
+            $view->with('cartCount', $cartCount);
+        });
     }
 }

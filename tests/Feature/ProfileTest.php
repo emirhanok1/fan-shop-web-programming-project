@@ -27,7 +27,7 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->patch('/profile', [
+            ->put('/profile', [
                 'name' => 'Test User',
                 'email' => 'test@example.com',
             ]);
@@ -49,7 +49,7 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->patch('/profile', [
+            ->put('/profile', [
                 'name' => 'Test User',
                 'email' => $user->email,
             ]);
@@ -67,7 +67,7 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->delete('/profile', [
+            ->delete('/profile/deactivate', [
                 'password' => 'password',
             ]);
 
@@ -76,7 +76,7 @@ class ProfileTest extends TestCase
             ->assertRedirect('/');
 
         $this->assertGuest();
-        $this->assertNull($user->fresh());
+        $this->assertFalse($user->fresh()->is_active);
     }
 
     public function test_correct_password_must_be_provided_to_delete_account(): void
@@ -86,7 +86,7 @@ class ProfileTest extends TestCase
         $response = $this
             ->actingAs($user)
             ->from('/profile')
-            ->delete('/profile', [
+            ->delete('/profile/deactivate', [
                 'password' => 'wrong-password',
             ]);
 

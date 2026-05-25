@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
+use App\Models\Transaction;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -32,17 +34,23 @@ class OrderController extends Controller
     public function approve(Order $order)
     {
         if ($order->status === 'pending') {
-            $order->update(['status' => 'approved']);
-            
-            // Initialize tracking at step 1 if not exists
-            if (!$order->tracking) {
-                $order->tracking()->create([
-                    'step' => 'preparing',
-                    'description' => 'Siparişiniz hazırlanıyor.',
-                ]);
-            }
+            DB::beginTransaction();
+            try {
+                $order->update(['status' => 'approved']);
+                
+                // Initialize tracking at step 1 if not exists (DB enum default is 'sourcing')
+                if (!$order->tracking) {
+                    $order->tracking()->create([
+                        'step' => 'sourcing',
+                    ]);
+                }
 
-            return redirect()->back()->with('success', 'Sipariş onaylandı.');
+                DB::commit();
+                return redirect()->back()->with('success', 'Sipariş onaylandı.');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return redirect()->back()->with('error', 'Sipariş onaylanırken hata oluştu: ' . $e->getMessage());
+            }
         }
 
         return redirect()->back()->with('error', 'Sipariş onaylanamaz.');
@@ -53,8 +61,8 @@ class OrderController extends Controller
      */
     public function advance(Order $order)
     {
-        if ($order->tracking) {
-            $steps = ['preparing', 'shipped', 'delivered', 'completed'];
+        if ($order->tracking && $order->status === 'approved') {
+            $steps = ['sourcing', 'packaging', 'shipped', 'on_the_way', 'delivered'];
             $currentStep = $order->tracking->step;
             $currentIndex = array_search($currentStep, $steps);
 
@@ -63,13 +71,7 @@ class OrderController extends Controller
                 
                 $order->tracking->update([
                     'step' => $nextStep,
-                    'description' => $this->getStepDescription($nextStep),
                 ]);
-
-                // If completed, update order status to confirmed
-                if ($nextStep === 'completed') {
-                    $order->update(['status' => 'confirmed']);
-                }
 
                 return redirect()->back()->with('success', 'Takip aşaması güncellendi.');
             }
@@ -84,35 +86,34 @@ class OrderController extends Controller
     public function reject(Order $order)
     {
         if (in_array($order->status, ['pending', 'approved'])) {
-            $order->update(['status' => 'cancelled']);
-            
-            // Refund user if balance was used
-            if ($order->balance_used > 0) {
+            DB::beginTransaction();
+            try {
+                $order->update(['status' => 'cancelled']);
+                
+                // Restore product stocks
+                foreach ($order->items as $item) {
+                    $item->product->increment('stock', $item->quantity);
+                }
+
+                // Refund the entire total_amount to balance (credit card is not refunded)
                 $user = $order->user;
-                $user->increment('balance', $order->balance_used);
+                $user->increment('balance', $order->total_amount);
                 
                 $user->transactions()->create([
-                    'amount' => $order->balance_used,
+                    'amount' => $order->total_amount,
                     'type' => 'refund',
                     'description' => '#' . $order->id . ' nolu sipariş iptal iadesi.',
                     'order_id' => $order->id
                 ]);
-            }
 
-            return redirect()->back()->with('success', 'Sipariş iptal edildi.');
+                DB::commit();
+                return redirect()->back()->with('success', 'Sipariş iptal edildi ve tutar kullanıcının cüzdanına iade edildi.');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return redirect()->back()->with('error', 'Sipariş iptal edilirken hata oluştu: ' . $e->getMessage());
+            }
         }
 
         return redirect()->back()->with('error', 'Sipariş iptal edilemez.');
-    }
-
-    private function getStepDescription(string $step): string
-    {
-        return match($step) {
-            'preparing' => 'Siparişiniz hazırlanıyor.',
-            'shipped' => 'Siparişiniz kargoya verildi.',
-            'delivered' => 'Siparişiniz teslim edildi.',
-            'completed' => 'Siparişiniz tamamlandı.',
-            default => 'Sipariş süreci devam ediyor.',
-        };
     }
 }
