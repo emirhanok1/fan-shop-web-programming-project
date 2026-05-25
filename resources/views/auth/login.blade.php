@@ -1,47 +1,74 @@
-<x-guest-layout>
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+@extends('layouts.app')
 
-    <form method="POST" action="{{ route('login') }}">
-        @csrf
+@section('title', 'Giriş Yap - FanStore')
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
-
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
-
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
-
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-            </label>
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
+@section('content')
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5 col-lg-4">
+            <div class="text-center mb-4">
+                <a href="{{ route('home') }}" class="text-decoration-none">
+                    <h2 style="color: var(--fs-accent); font-weight: 800;">
+                        <i class="fas fa-film me-2"></i>FanStore
+                    </h2>
                 </a>
-            @endif
+                <p class="small" style="color: var(--fs-text-muted);">Hesabınıza giriş yapın</p>
+            </div>
 
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
+            <div class="fs-card p-4">
+                {{-- Session Status --}}
+                @if(session('status'))
+                    <div class="alert alert-success alert-sm small mb-3">{{ session('status') }}</div>
+                @endif
+
+                <form method="POST" action="{{ route('login') }}">
+                    @csrf
+
+                    {{-- Email --}}
+                    <div class="mb-3">
+                        <label for="email" class="form-label small fw-semibold" style="color: var(--fs-text-muted);">E-posta Adresi</label>
+                        <input id="email" type="email" name="email" value="{{ old('email') }}"
+                               class="form-control fs-search-input @error('email') is-invalid @enderror"
+                               required autofocus autocomplete="username"
+                               placeholder="ornek@mail.com">
+                        @error('email')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    {{-- Password --}}
+                    <div class="mb-3">
+                        <label for="password" class="form-label small fw-semibold" style="color: var(--fs-text-muted);">Şifre</label>
+                        <input id="password" type="password" name="password"
+                               class="form-control fs-search-input @error('password') is-invalid @enderror"
+                               required autocomplete="current-password"
+                               placeholder="••••••••">
+                        @error('password')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    {{-- Remember Me --}}
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="remember" id="remember_me">
+                            <label class="form-check-label small" for="remember_me" style="color: var(--fs-text-muted);">Beni Hatırla</label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-accent w-100 py-2 fw-semibold">
+                        <i class="fas fa-sign-in-alt me-2"></i>Giriş Yap
+                    </button>
+                </form>
+
+                <div class="text-center mt-3">
+                    <p class="small mb-0" style="color: var(--fs-text-muted);">
+                        Hesabınız yok mu?
+                        <a href="{{ route('register') }}" style="color: var(--fs-accent); text-decoration: none; font-weight: 600;">Kayıt Ol</a>
+                    </p>
+                </div>
+            </div>
         </div>
-    </form>
-</x-guest-layout>
+    </div>
+</div>
+@endsection
