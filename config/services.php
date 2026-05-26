@@ -39,4 +39,8 @@ return [
         'key' => env('TMDB_API_KEY', ''),
     ],
 
+    'openweather' => [
+        'key' => env('OPENWEATHER_API_KEY', ''),
+    ],
+
 ];

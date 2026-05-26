@@ -90,4 +90,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/orders/{order}/reject', [AdminOrderController::class, 'reject'])->name('orders.reject');
 });
 
+if (app()->environment('local')) {
+    Route::get('/test-weather/{city}', function ($city) {
+        $weather = app(\App\Services\WeatherService::class)
+            ->getByCity($city);
+        return response()->json($weather);
+    });
+}
+
 require __DIR__.'/auth.php';

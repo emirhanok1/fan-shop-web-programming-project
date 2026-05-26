@@ -80,14 +80,35 @@
                         </div>
                     </div>
 
-                    {{-- OpenWeatherMap Weather warning placeholder (Faz 7'de eklenecek) --}}
-                    <div class="alert alert-info py-2 px-3 border-0 small d-flex align-items-center mb-0 mt-4" style="background: rgba(13, 110, 253, 0.08); color: #0d6efd;">
-                        <i class="fas fa-cloud-sun-rain me-2 fa-lg"></i>
+                    {{-- OpenWeatherMap Weather Banner --}}
+                    @if(isset($isDelayWarning) && $isDelayWarning)
+                    <div class="alert alert-warning alert-dismissible fade show d-flex align-items-center gap-3 mt-4 mb-0" role="alert" data-bs-dismiss-delay="0">
+                      <img src="{{ $weatherIcon }}" width="50" height="50" alt="hava durumu">
+                      <div>
+                        <strong>⚠️ Kargo Gecikme Uyarısı</strong><br>
+                        Teslimat bölgenizde <strong>{{ $weatherDescription }}</strong> ({{ $temperature }}°C) hava koşulları nedeniyle kargonuzda gecikme yaşanabilir.
+                      </div>
+                      <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                    </div>
+                    @endif
+
+                    @if(isset($weather) && $weather && !$isDelayWarning)
+                    <div class="d-flex align-items-center gap-2 mt-4 mb-0 text-muted small">
+                      <img src="{{ $weatherIcon }}" width="30" height="30" alt="hava durumu">
+                      <span>Teslimat bölgesi: {{ $weatherDescription }}, {{ $temperature }}°C</span>
+                    </div>
+                    @endif
+                </div>
+
+                @if($order->status === 'confirmed')
+                    <div class="alert alert-success d-flex align-items-center py-3 mb-4">
+                        <i class="fas fa-check-circle fa-2x me-3"></i>
                         <div>
-                            <strong>Hava Durumu Servisi (Faz 7 Entegrasyonu):</strong> Teslimat şehrinizdeki hava durumuna göre kargo uyarıları burada gösterilecektir.
+                            <h5 class="alert-heading mb-1 fw-bold">✓ Sipariş Teslim Alındı</h5>
+                            <p class="mb-0">Siparişinizi başarıyla teslim aldığınızı onayladınız. FanStore'u tercih ettiğiniz için teşekkür ederiz!</p>
                         </div>
                     </div>
-                </div>
+                @endif
             @endif
 
             {{-- 2. Products List --}}

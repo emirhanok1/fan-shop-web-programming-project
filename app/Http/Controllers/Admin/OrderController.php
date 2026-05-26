@@ -13,9 +13,29 @@ class OrderController extends Controller
     /**
      * Display a listing of all orders.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Order::with('user')->latest()->paginate(15);
+        $query = Order::with('user')->latest();
+
+        // Status filtresi
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Arama (invoice_no veya kullanıcı adı/email)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('invoice_no', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($uq) use ($search) {
+                      $uq->where('name', 'like', "%{$search}%")
+                         ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $orders = $query->paginate(15)->withQueryString();
+        
         return view('admin.orders.index', compact('orders'));
     }
 

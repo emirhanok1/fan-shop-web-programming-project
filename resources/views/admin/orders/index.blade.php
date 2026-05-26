@@ -4,6 +4,32 @@
 @section('page_title', 'Sipariş Yönetimi')
 
 @section('content')
+<!-- Filtre ve Arama -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form action="{{ route('admin.orders.index') }}" method="GET" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Arama</label>
+                <input type="text" class="form-control" id="search" name="search" value="{{ request('search') }}" placeholder="Fatura No, Müşteri Adı veya Email...">
+            </div>
+            <div class="col-md-4">
+                <label for="status" class="form-label">Durum</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">Tümü</option>
+                    <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Beklemede</option>
+                    <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Onaylandı</option>
+                    <option value="confirmed" {{ request('status') === 'confirmed' ? 'selected' : '' }}>Tamamlandı</option>
+                    <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>İptal Edildi</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary me-2"><i class="fas fa-filter"></i> Filtrele</button>
+                <a href="{{ route('admin.orders.index') }}" class="btn btn-secondary"><i class="fas fa-undo"></i> Temizle</a>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="card border-0 shadow-sm">
     <div class="card-body p-0">
         <div class="table-responsive">

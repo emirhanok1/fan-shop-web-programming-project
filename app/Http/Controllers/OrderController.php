@@ -31,7 +31,29 @@ class OrderController extends Controller
 
         $order->load(['items.product.productImages', 'tracking']);
 
-        return view('orders.show', compact('order'));
+        // Teslimat adresinden şehir parse et
+        $addressParts = explode(',', $order->shipping_address);
+        $city = trim(end($addressParts));
+        if (empty($city)) {
+            $city = null;
+        }
+
+        $weatherService = app(\App\Services\WeatherService::class);
+        $weather = $city ? $weatherService->getByCity($city) : null;
+        
+        $isDelayWarning = $weatherService->isDelayWarning($weather);
+        $weatherDescription = $weatherService->getDescription($weather);
+        $temperature = $weatherService->getTemperature($weather);
+        $weatherIcon = $weatherService->getIconUrl($weather);
+
+        return view('orders.show', compact(
+            'order', 
+            'weather', 
+            'isDelayWarning', 
+            'weatherDescription', 
+            'temperature', 
+            'weatherIcon'
+        ));
     }
 
     /**
