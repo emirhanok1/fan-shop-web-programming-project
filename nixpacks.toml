@@ -3,7 +3,7 @@ NIXPACKS_PHP_ROOT_DIR = '/app/public'
 NIXPACKS_PHP_FALLBACK_PATH = '/index.php'
 
 [phases.setup]
-nixPkgs = ['php82', 'php82Extensions.pdo_mysql', 'php82Extensions.gd', 'php82Extensions.mbstring', 'php82Extensions.xml', 'php82Extensions.curl', 'php82Extensions.zip', 'libpng', 'libjpeg', 'libwebp', 'nodejs_18', 'npm-9_x']
+nixPkgs = ['php82', 'phpPackages.composer', 'php82Extensions.pdo_mysql', 'php82Extensions.gd', 'php82Extensions.mbstring', 'php82Extensions.xml', 'php82Extensions.curl', 'php82Extensions.zip', 'libpng', 'libjpeg', 'libwebp', 'nodejs_18', 'npm-9_x']
 
 [phases.install]
 cmds = ['composer install --ignore-platform-reqs', 'npm ci']
