@@ -105,7 +105,7 @@ if (app()->environment('local', 'testing')) {
 }
 
 Route::get('/clear-cache', function () {
-    \Illuminate\Support\Facades\Artisan::call('cache:clear');
+    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
     return 'Cache cleared successfully!';
 });
 
