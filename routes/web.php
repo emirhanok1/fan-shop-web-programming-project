@@ -104,4 +104,9 @@ if (app()->environment('local', 'testing')) {
     });
 }
 
+Route::get('/clear-cache', function () {
+    \Illuminate\Support\Facades\Artisan::call('cache:clear');
+    return 'Cache cleared successfully!';
+});
+
 require __DIR__.'/auth.php';
