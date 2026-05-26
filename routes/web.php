@@ -109,4 +109,42 @@ Route::get('/clear-cache', function () {
     return 'Cache cleared successfully!';
 });
 
+Route::get('/debug-tmdb', function () {
+    $key = config('services.tmdb.key');
+    $envKey = env('TMDB_API_KEY');
+    
+    $info = [
+        'config_key_exists' => !empty($key),
+        'config_key_length' => strlen($key),
+        'config_key_start' => substr($key, 0, 10),
+        'config_key_end' => substr($key, -10),
+        'env_key_exists' => !empty($envKey),
+        'env_key_length' => strlen($envKey),
+        'env_key_start' => substr($envKey, 0, 10),
+        'env_key_end' => substr($envKey, -10),
+        'app_env' => app()->environment(),
+    ];
+    
+    try {
+        $response = \Illuminate\Support\Facades\Http::timeout(10)
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . $key,
+                'Accept' => 'application/json',
+            ])
+            ->get('https://api.themoviedb.org/3/search/multi', [
+                'query' => 'The Boys',
+                'language' => 'tr-TR',
+                'page' => 1,
+            ]);
+            
+        $info['tmdb_response_status'] = $response->status();
+        $info['tmdb_response_successful'] = $response->successful();
+        $info['tmdb_response_body'] = $response->json();
+    } catch (\Exception $e) {
+        $info['error'] = $e->getMessage();
+    }
+    
+    return response()->json($info);
+});
+
 require __DIR__.'/auth.php';
