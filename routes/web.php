@@ -109,44 +109,4 @@ Route::get('/clear-cache', function () {
     return 'Cache cleared successfully!';
 });
 
-Route::get('/debug-tmdb', function () {
-    $prodKey = env('TMDB_API_KEY');
-    $localKey = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxZTA0NmFhYTNmZDlkZmNkNGIzZGRlODBlMzBjM2M3YSIsIm5iZiI6MTc3OTc3OTczNS45NjcsInN1YiI6IjZhMTU0ODk3ZDY3ZDExMTQ0YTM5NWIxNiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.PnPgrazG-LOI3a4X3E4dBcKD0oKeT1OAryAEerP1cNQ';
-    
-    $comparison = [
-        'prod_len' => strlen($prodKey),
-        'local_len' => strlen($localKey),
-        'exact_match' => ($prodKey === $localKey),
-        'differences' => []
-    ];
-    
-    // Character by character diff
-    $len = max(strlen($prodKey), strlen($localKey));
-    $diffs = [];
-    $p_idx = 0;
-    $l_idx = 0;
-    
-    while ($p_idx < strlen($prodKey) || $l_idx < strlen($localKey)) {
-        $p_char = $p_idx < strlen($prodKey) ? $prodKey[$p_idx] : null;
-        $l_char = $l_idx < strlen($localKey) ? $localKey[$l_idx] : null;
-        
-        if ($p_char !== $l_char) {
-            $diffs[] = [
-                'pos' => max($p_idx, $l_idx),
-                'prod_char' => $p_char,
-                'local_char' => $l_char,
-            ];
-            // To prevent flooding, limit to first 10 differences
-            if (count($diffs) >= 10) {
-                break;
-            }
-        }
-        $p_idx++;
-        $l_idx++;
-    }
-    $comparison['differences'] = $diffs;
-    
-    return response()->json($comparison);
-});
-
 require __DIR__.'/auth.php';
