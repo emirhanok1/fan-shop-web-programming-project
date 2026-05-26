@@ -113,22 +113,38 @@ Route::get('/debug-tmdb', function () {
     $key = config('services.tmdb.key');
     $envKey = env('TMDB_API_KEY');
     
+    $config_ords = [];
+    for ($i = 0; $i < strlen($key); $i++) {
+        if ($i < 15 || $i >= strlen($key) - 15) {
+            $config_ords[$i] = ord($key[$i]);
+        }
+    }
+    
+    $env_ords = [];
+    for ($i = 0; $i < strlen($envKey); $i++) {
+        if ($i < 15 || $i >= strlen($envKey) - 15) {
+            $env_ords[$i] = ord($envKey[$i]);
+        }
+    }
+
     $info = [
         'config_key_exists' => !empty($key),
         'config_key_length' => strlen($key),
-        'config_key_start' => substr($key, 0, 10),
-        'config_key_end' => substr($key, -10),
+        'config_ords' => $config_ords,
         'env_key_exists' => !empty($envKey),
         'env_key_length' => strlen($envKey),
-        'env_key_start' => substr($envKey, 0, 10),
-        'env_key_end' => substr($envKey, -10),
+        'env_ords' => $env_ords,
         'app_env' => app()->environment(),
     ];
+    
+    // Attempt request with trimmed key
+    $trimmedKey = trim($key);
+    $info['trimmed_key_length'] = strlen($trimmedKey);
     
     try {
         $response = \Illuminate\Support\Facades\Http::timeout(10)
             ->withHeaders([
-                'Authorization' => 'Bearer ' . $key,
+                'Authorization' => 'Bearer ' . $trimmedKey,
                 'Accept' => 'application/json',
             ])
             ->get('https://api.themoviedb.org/3/search/multi', [
