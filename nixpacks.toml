@@ -5,13 +5,13 @@ NIXPACKS_PHP_FALLBACK_PATH = '/index.php'
 [phases.setup]
 nixPkgs = [
   "...",
-  "php83Extensions.pdo_mysql",
-  "php83Extensions.redis",
-  "php83Extensions.gd",
-  "php83Extensions.mbstring",
-  "php83Extensions.xml",
-  "php83Extensions.curl",
-  "php83Extensions.zip",
+  "php82Extensions.pdo_mysql",
+  "php82Extensions.redis",
+  "php82Extensions.gd",
+  "php82Extensions.mbstring",
+  "php82Extensions.xml",
+  "php82Extensions.curl",
+  "php82Extensions.zip",
   "libpng",
   "libjpeg",
   "libwebp"
@@ -28,4 +28,4 @@ cmds = [
 ]
 
 [start]
-cmd = "php artisan migrate --force && php artisan storage:link && php artisan optimize && php-fpm -D && nginx -g 'daemon off;'"
+cmd = "php artisan migrate --force && php artisan storage:link --force && php artisan optimize && php artisan serve --host=0.0.0.0 --port=$PORT"
