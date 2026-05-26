@@ -110,57 +110,43 @@ Route::get('/clear-cache', function () {
 });
 
 Route::get('/debug-tmdb', function () {
-    $key = config('services.tmdb.key');
-    $envKey = env('TMDB_API_KEY');
+    $prodKey = env('TMDB_API_KEY');
+    $localKey = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxZTA0NmFhYTNmZDlkZmNkNGIzZGRlODBlMzBjM2M3YSIsIm5iZiI6MTc3OTc3OTczNS45NjcsInN1YiI6IjZhMTU0ODk3ZDY3ZDExMTQ0YTM5NWIxNiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.PnPgrazG-LOI3a4X3E4dBcKD0oKeT1OAryAEerP1cNQ';
     
-    $config_ords = [];
-    for ($i = 0; $i < strlen($key); $i++) {
-        if ($i < 15 || $i >= strlen($key) - 15) {
-            $config_ords[$i] = ord($key[$i]);
-        }
-    }
-    
-    $env_ords = [];
-    for ($i = 0; $i < strlen($envKey); $i++) {
-        if ($i < 15 || $i >= strlen($envKey) - 15) {
-            $env_ords[$i] = ord($envKey[$i]);
-        }
-    }
-
-    $info = [
-        'config_key_exists' => !empty($key),
-        'config_key_length' => strlen($key),
-        'config_ords' => $config_ords,
-        'env_key_exists' => !empty($envKey),
-        'env_key_length' => strlen($envKey),
-        'env_ords' => $env_ords,
-        'app_env' => app()->environment(),
+    $comparison = [
+        'prod_len' => strlen($prodKey),
+        'local_len' => strlen($localKey),
+        'exact_match' => ($prodKey === $localKey),
+        'differences' => []
     ];
     
-    // Attempt request with trimmed key
-    $trimmedKey = trim($key);
-    $info['trimmed_key_length'] = strlen($trimmedKey);
+    // Character by character diff
+    $len = max(strlen($prodKey), strlen($localKey));
+    $diffs = [];
+    $p_idx = 0;
+    $l_idx = 0;
     
-    try {
-        $response = \Illuminate\Support\Facades\Http::timeout(10)
-            ->withHeaders([
-                'Authorization' => 'Bearer ' . $trimmedKey,
-                'Accept' => 'application/json',
-            ])
-            ->get('https://api.themoviedb.org/3/search/multi', [
-                'query' => 'The Boys',
-                'language' => 'tr-TR',
-                'page' => 1,
-            ]);
-            
-        $info['tmdb_response_status'] = $response->status();
-        $info['tmdb_response_successful'] = $response->successful();
-        $info['tmdb_response_body'] = $response->json();
-    } catch (\Exception $e) {
-        $info['error'] = $e->getMessage();
+    while ($p_idx < strlen($prodKey) || $l_idx < strlen($localKey)) {
+        $p_char = $p_idx < strlen($prodKey) ? $prodKey[$p_idx] : null;
+        $l_char = $l_idx < strlen($localKey) ? $localKey[$l_idx] : null;
+        
+        if ($p_char !== $l_char) {
+            $diffs[] = [
+                'pos' => max($p_idx, $l_idx),
+                'prod_char' => $p_char,
+                'local_char' => $l_char,
+            ];
+            // To prevent flooding, limit to first 10 differences
+            if (count($diffs) >= 10) {
+                break;
+            }
+        }
+        $p_idx++;
+        $l_idx++;
     }
+    $comparison['differences'] = $diffs;
     
-    return response()->json($info);
+    return response()->json($comparison);
 });
 
 require __DIR__.'/auth.php';
