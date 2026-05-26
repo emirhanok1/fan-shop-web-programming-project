@@ -1,59 +1,118 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🎬 FanStore — Film & Dizi Merchandise Platformu
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> Kocaeli Üniversitesi TBL304 Web Programlama Dersi Projesi
 
-## About Laravel
+## 📖 Proje Hakkında
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+FanStore, popüler film ve TV dizilerine ait lisanslı
+ürünlerin (poster, figür, giyim, aksesuar vb.)
+satışını gerçekleştiren Laravel 11 tabanlı
+e-ticaret platformudur.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## ✨ Özellikler
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 🛍️ Mağaza
+- Koyu/Açık tema toggle (localStorage)
+- Ürün listeleme, filtreleme, arama, sıralama
+- Ürün detay sayfası + TMDB film/dizi bilgisi
+- Franchise bazlı keşif
 
-## Learning Laravel
+### 🛒 Alışveriş
+- AJAX sepet sistemi
+- Parçalı ödeme (önce bakiye, kalan kart)
+- Stok kontrolü
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### 📦 Sipariş Takip
+- 5 aşamalı animasyonlu kargo takibi
+- Sipariş iptali → bakiyeye otomatik iade
+- Hava durumu kargo gecikme uyarısı
+- "Teslim Aldım" onay sistemi
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 👤 Kullanıcı
+- Profil yönetimi + WebP avatar
+- Bakiye & transaction geçmişi
+- Adres defteri + Google Maps
+- Hesap pasifleştirme
 
-## Laravel Sponsors
+### 🎛️ Admin Paneli
+- Ürün CRUD + WebP görsel yükleme
+- TMDB Quick Search entegrasyonu
+- Kullanıcı yönetimi
+- Sipariş onaylama + kargo takibi
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 🔌 API Entegrasyonları
+- TMDB API (film/dizi bilgisi)
+- OpenWeatherMap (kargo gecikme uyarısı)
+- Google Maps Places API (adres otomatik tamamlama)
 
-### Premium Partners
+## 🛠️ Teknoloji Yığını
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+- **Backend:** Laravel 11, PHP 8.2+
+- **Frontend:** Bootstrap 5.3, AdminLTE 3
+- **Veritabanı:** MySQL 8
+- **Görsel İşleme:** Intervention Image v3 (WebP)
+- **Deploy:** Railway.app
 
-## Contributing
+## 🚀 Kurulum
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Gereksinimler
+- PHP 8.2+
+- Composer
+- Node.js & NPM
+- MySQL 8
 
-## Code of Conduct
+### Adımlar
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+1. Repoyu klonla:
+git clone https://github.com/emirhanok1/fan-shop-web-programming-project.git
+cd fan-shop-web-programming-project
 
-## Security Vulnerabilities
+2. Bağımlılıkları yükle:
+composer install
+npm install
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+3. .env dosyasını oluştur:
+cp .env.example .env
+php artisan key:generate
 
-## License
+4. Veritabanını ayarla:
+.env dosyasında DB_* değerlerini doldur
+php artisan migrate --seed
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+5. Storage link:
+php artisan storage:link
+
+6. Frontend derle:
+npm run build
+
+7. Sunucuyu başlat:
+php artisan serve
+
+## 🔑 Demo Hesapları
+
+| Rol | Email | Şifre |
+|-----|-------|-------|
+| Admin | admin@fanstore.com | admin123 |
+| Kullanıcı | user1@fanstore.com | password |
+
+## 🌐 Canlı Demo
+
+[FanStore Demo](https://your-domain.up.railway.app)
+
+## 📋 API Anahtarları
+
+Aşağıdaki API anahtarlarını .env dosyasına ekle:
+- TMDB_API_KEY: https://www.themoviedb.org/settings/api
+- OPENWEATHER_API_KEY: https://openweathermap.org/api
+- GOOGLE_MAPS_API_KEY: https://console.cloud.google.com
+
+## 📊 Veritabanı Şeması
+
+11 tablo: users, categories, products,
+product_images, carts, cart_items, orders,
+order_items, order_tracking, transactions, addresses
+
+## 👨‍💻 Geliştirici
+
+Emirhan Oktay — Kocaeli Üniversitesi
+Bilişim Sistemleri Mühendisliği

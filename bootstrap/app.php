@@ -24,5 +24,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectUsersTo(fn () => auth()->user()->role === 'admin' ? route('admin.dashboard') : route('dashboard'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
+            if (app()->environment('production') && ($request->is('api/*') || $request->ajax())) {
+                \Illuminate\Support\Facades\Log::error('API/Ajax Error: ' . $e->getMessage(), [
+                    'url' => $request->url(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+
+                return response()->json([
+                    'message' => 'Sunucu hatası oluştu. Lütfen daha sonra tekrar deneyin.'
+                ], 500);
+            }
+        });
     })->create();
