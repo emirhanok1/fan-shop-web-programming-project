@@ -109,27 +109,84 @@
                 @endif
             </div>
 
-            {{-- TMDB Info Placeholder --}}
-            <div class="fs-card p-4 mt-3">
-                <h5 class="fw-bold mb-3">
-                    <i class="fas fa-info-circle me-2" style="color: var(--fs-accent);"></i>Bu Franchise Hakkında
-                </h5>
-                <div class="d-flex gap-3">
-                    <div style="width: 100px; height: 150px; background: var(--fs-border); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                        <i class="fas fa-image fa-2x" style="color: var(--fs-text-muted); opacity: 0.3;"></i>
-                    </div>
-                    <div>
-                        <h6 class="fw-bold mb-1">{{ $product->franchise }}</h6>
-                        <p class="small mb-2" style="color: var(--fs-text-muted);">
-                            Bu bölüm, TMDB API entegrasyonu ile doldurulacaktır. Dizinin/filmin posteri, açıklaması ve puanı burada görüntülenecektir.
-                        </p>
-                        <div class="d-flex gap-2">
-                            <span class="badge" style="background: var(--fs-border); color: var(--fs-text-muted);">Puan: —</span>
-                            <span class="badge" style="background: var(--fs-border); color: var(--fs-text-muted);">Tür: —</span>
-                        </div>
-                    </div>
+            {{-- TMDB Info --}}
+            @if(isset($tmdbData) && $tmdbData)
+            <div class="tmdb-section mt-4 p-4 rounded"
+                 style="background: var(--fs-card)">
+
+              <div class="row align-items-start">
+                {{-- Poster --}}
+                <div class="col-md-3 mb-3">
+                  @php
+                    $posterUrl = app(App\Services\TMDBService::class)
+                        ->getPosterUrl($tmdbData['poster_path'] ?? null);
+                  @endphp
+                  @if($posterUrl)
+                    <img src="{{ $posterUrl }}"
+                         class="img-fluid rounded shadow"
+                         alt="{{ $product->franchise }}">
+                  @endif
                 </div>
+
+                {{-- Bilgiler --}}
+                <div class="col-md-9">
+                  <h4 class="fw-bold mb-1">
+                    {{ app(App\Services\TMDBService::class)
+                        ->getTitle($tmdbData, $product->tmdb_type) }}
+                  </h4>
+
+                  {{-- Tür badge'leri --}}
+                  <div class="mb-2">
+                    @foreach($tmdbData['genres'] ?? [] as $genre)
+                      <span class="badge bg-secondary me-1">
+                        {{ $genre['name'] }}
+                      </span>
+                    @endforeach
+                  </div>
+
+                  {{-- Puan --}}
+                  @if(isset($tmdbData['vote_average']))
+                  <div class="mb-2">
+                    <span class="text-warning fs-5">
+                      @for($i = 1; $i <= 5; $i++)
+                        @if($i <= floor(app(App\Services\TMDBService::class)->getStarRating($tmdbData['vote_average'])))
+                          ★
+                        @else
+                          ☆
+                        @endif
+                      @endfor
+                    </span>
+                    <span class="ms-1 text-muted">
+                      {{ number_format($tmdbData['vote_average'], 1) }}/10
+                      ({{ number_format($tmdbData['vote_count'] ?? 0) }} oy)
+                    </span>
+                  </div>
+                  @endif
+
+                  {{-- Yayın tarihi --}}
+                  @if(isset($tmdbData['first_air_date']) || isset($tmdbData['release_date']))
+                  <p class="text-muted small mb-2">
+                    📅 İlk Yayın:
+                    {{ $tmdbData['first_air_date']
+                       ?? $tmdbData['release_date'] ?? '' }}
+                  </p>
+                  @endif
+
+                  {{-- Özet --}}
+                  @if(!empty($tmdbData['overview']))
+                  <p class="mb-0" style="font-size: 0.9rem; line-height: 1.6">
+                    {{ Str::limit($tmdbData['overview'], 300) }}
+                  </p>
+                  @endif
+                </div>
+              </div>
             </div>
+            @else
+            <div class="text-muted small mt-3">
+              <i class="fas fa-film me-1"></i>
+              Bu franchise hakkında bilgi yüklenemedi.
+            </div>
+            @endif
         </div>
     </div>
 

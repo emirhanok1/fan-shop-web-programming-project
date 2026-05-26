@@ -96,6 +96,12 @@ if (app()->environment('local', 'testing')) {
             ->getByCity($city);
         return response()->json($weather);
     });
+
+    Route::get('/test-tmdb/{type}/{id}', function ($type, $id) {
+        $tmdb = app(\App\Services\TMDBService::class)
+            ->getById($id, $type);
+        return response()->json($tmdb);
+    });
 }
 
 require __DIR__.'/auth.php';

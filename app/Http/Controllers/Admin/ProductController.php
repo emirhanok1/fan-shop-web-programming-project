@@ -193,38 +193,26 @@ class ProductController extends Controller
     public function tmdbSearch(Request $request)
     {
         $query = $request->input('q');
-        $token = config('services.tmdb.key');
 
-        if (empty($query) || empty($token)) {
+        if (empty($query)) {
             return response()->json([]);
         }
 
-        try {
-            $response = Http::withToken($token)
-                ->timeout(5)
-                ->get('https://api.themoviedb.org/3/search/multi', [
-                    'query' => $query,
-                    'language' => 'tr-TR'
-                ]);
+        $tmdbService = app(\App\Services\TMDBService::class);
+        $results = $tmdbService->search($query);
 
-            if ($response->successful()) {
-                $results = collect($response->json()['results'] ?? [])
-                    ->take(5)
-                    ->map(function ($item) {
-                        return [
-                            'id' => $item['id'],
-                            'title' => $item['title'] ?? $item['name'] ?? 'Bilinmeyen Başlık',
-                            'poster_path' => $item['poster_path'] ? 'https://image.tmdb.org/t/p/w92' . $item['poster_path'] : null,
-                            'media_type' => $item['media_type'] ?? 'movie'
-                        ];
-                    });
-                return response()->json($results);
-            }
-        } catch (\Exception $e) {
-            // Graceful failure
-        }
+        $formatted = array_map(function($item) use ($tmdbService) {
+            return [
+                'id' => $item['id'],
+                'title' => $tmdbService->getTitle($item, $item['media_type']),
+                'media_type' => $item['media_type'],
+                'poster' => $tmdbService->getPosterUrl($item['poster_path'] ?? null, 'w92'),
+                'year' => substr($item['first_air_date'] ?? $item['release_date'] ?? '', 0, 4),
+                'overview' => \Illuminate\Support\Str::limit($item['overview'] ?? '', 100)
+            ];
+        }, $results);
 
-        return response()->json([]);
+        return response()->json($formatted);
     }
 
     /**

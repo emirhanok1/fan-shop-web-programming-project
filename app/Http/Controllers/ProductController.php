@@ -87,6 +87,12 @@ class ProductController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
+        $tmdbData = null;
+        if ($product->tmdb_id && $product->tmdb_type) {
+            $tmdbData = app(\App\Services\TMDBService::class)
+                ->getById($product->tmdb_id, $product->tmdb_type);
+        }
+
         $relatedProducts = Product::with(['productImages'])
             ->where('franchise', $product->franchise)
             ->where('id', '!=', $product->id)
@@ -95,6 +101,6 @@ class ProductController extends Controller
             ->take(4)
             ->get();
 
-        return view('products.show', compact('product', 'relatedProducts'));
+        return view('products.show', compact('product', 'relatedProducts', 'tmdbData'));
     }
 }

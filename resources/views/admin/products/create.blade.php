@@ -160,7 +160,8 @@
 
                     results.forEach(function(item) {
                         let mediaTypeLabel = item.media_type === 'tv' ? 'Dizi (TV)' : 'Film';
-                        let posterUrl = item.poster_path ? item.poster_path : 'https://placehold.co/92x138?text=Görsel+Yok';
+                        let posterUrl = item.poster ? item.poster : 'https://placehold.co/92x138?text=Görsel+Yok';
+                        let year = item.year ? `(${item.year})` : '';
                         
                         let itemHtml = `
                             <button type="button" class="list-group-item list-group-item-action d-flex align-items-center py-2 select-tmdb-item" 
@@ -169,7 +170,7 @@
                                     data-title="${item.title}">
                                 <img src="${posterUrl}" class="rounded me-3" style="width: 40px; height: 60px; object-fit: cover;">
                                 <div>
-                                    <div class="fw-bold small text-dark">${item.title}</div>
+                                    <div class="fw-bold small text-dark">${item.title} ${year}</div>
                                     <span class="badge bg-secondary p-1" style="font-size: 0.7rem;">${mediaTypeLabel}</span>
                                 </div>
                             </button>

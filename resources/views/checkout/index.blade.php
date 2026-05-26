@@ -89,14 +89,14 @@
                     {{-- Target input that actually gets sent to backend --}}
                     <input type="hidden" name="shipping_address" id="final_shipping_address" value="{{ old('shipping_address') }}">
 
-                    {{-- Google Maps Placeholder (Faz 7'de doldurulacak) --}}
-                    <div id="map-container" class="rounded border d-flex align-items-center justify-content-center bg-dark text-muted mt-3" 
-                         style="height: 200px; border-color: var(--fs-border) !important;">
-                        <div class="text-center p-3">
-                            <i class="fas fa-map-marked-alt fa-2x mb-2 opacity-50 text-danger"></i>
-                            <p class="mb-0 small">Google Maps Adres Doğrulama Servisi (Faz 7 Entegrasyonu)</p>
-                            <small class="opacity-50">Yeni bir adres girildiğinde veya seçildiğinde haritada gösterilecektir.</small>
-                        </div>
+                    {{-- Google Maps --}}
+                    <input type="hidden" name="latitude" id="latitude">
+                    <input type="hidden" name="longitude" id="longitude">
+
+                    <div id="autocomplete-container" class="mb-3 mt-3"></div>
+                    <div id="map-container"
+                         style="height: 300px; border-radius: 8px;"
+                         class="mb-3">
                     </div>
                 </div>
 
@@ -214,6 +214,114 @@
 @endsection
 
 @push('scripts')
+<script>
+  const GOOGLE_MAPS_KEY = "{{ config('services.maps.key') }}";
+
+  // FOUC önleme — key yoksa yükleme
+  if (!GOOGLE_MAPS_KEY) {
+    console.log('Google Maps API key bulunamadı');
+  } else {
+    // Asenkron Google Maps yükleyici
+    (g=>{var h,a,k,p="The Google Maps JavaScript API",
+    c="google",l="importLibrary",q="__ib__",m=document,
+    b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),
+    r=new Set,e=new URLSearchParams,
+    u=()=>h||(h=new Promise(async(f,n)=>{
+    await (a=m.createElement("script"));
+    e.set("libraries",[...r]+"");
+    for(k in g)e.set(k.replace(/[A-Z]/g,
+    t=>"_"+t[0].toLowerCase()),g[k]);
+    e.set("callback",c+".maps."+q);a.src=
+    `https://maps.${c}apis.com/maps/api/js?`+e;
+    d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));
+    a.nonce=m.querySelector("script[nonce]")?.nonce||"";
+    m.head.append(a)}));d[l]?console.warn(p+
+    " only loads once. Ignoring:",g):d[l]=
+    (f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))
+    })({key: GOOGLE_MAPS_KEY, v: "beta", language: "tr", region: "TR"});
+
+    async function initMap() {
+      try {
+        const { PlaceAutocompleteElement } =
+          await google.maps.importLibrary("places");
+
+        // Autocomplete elementi oluştur
+        const autocomplete = new PlaceAutocompleteElement({
+          includedRegionCodes: ['tr'],
+        });
+        autocomplete.id = "place-autocomplete";
+        autocomplete.setAttribute("placeholder",
+          "Adres arayın...");
+        autocomplete.style.width = "100%";
+
+        // Container'a ekle
+        const container = document.getElementById(
+          'autocomplete-container');
+        if (container) container.appendChild(autocomplete);
+
+        // Harita başlat
+        const { Map } = await google.maps.importLibrary("maps");
+        const { AdvancedMarkerElement } =
+          await google.maps.importLibrary("marker");
+
+        const map = new Map(
+          document.getElementById('map-container'), {
+          center: { lat: 39.9334, lng: 32.8597 },
+          zoom: 6,
+          mapId: 'fanstore_map',
+        });
+
+        let marker = null;
+
+        // Adres seçilince
+        autocomplete.addEventListener('gmp-select',
+          async ({ placePrediction }) => {
+          if (!placePrediction) return;
+
+          const place = placePrediction.toPlace();
+          await place.fetchFields({
+            fields: ['formattedAddress', 'location',
+                     'addressComponents']
+          });
+
+          if (place.location) {
+            // Haritayı güncelle
+            map.setCenter(place.location);
+            map.setZoom(15);
+
+            if (marker) marker.map = null;
+            marker = new AdvancedMarkerElement({
+              map,
+              position: place.location,
+            });
+
+            // Hidden input'ları doldur
+            const addrInput = document.getElementById(
+              'shipping_address_textarea');
+            const latInput = document.getElementById(
+              'latitude');
+            const lngInput = document.getElementById(
+              'longitude');
+
+            if (addrInput) {
+              addrInput.value = place.formattedAddress;
+              addrInput.dispatchEvent(new Event('input'));
+            }
+            if (latInput)
+              latInput.value = place.location.lat();
+            if (lngInput)
+              lngInput.value = place.location.lng();
+          }
+        });
+      } catch(e) {
+        console.warn('Google Maps yüklenemedi:', e);
+      }
+    }
+
+    // DOM hazır olunca başlat
+    document.addEventListener('DOMContentLoaded', initMap);
+  }
+</script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const radioButtons = document.querySelectorAll('input[name="selected_address_id"]');

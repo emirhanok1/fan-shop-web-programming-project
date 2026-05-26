@@ -7,6 +7,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use App\Services\WeatherService;
+use App\Services\TMDBService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,6 +26,10 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(WeatherService::class, function () {
             return new WeatherService();
+        });
+
+        $this->app->singleton(TMDBService::class, function () {
+            return new TMDBService();
         });
 
         if ($this->app->environment('production')) {
