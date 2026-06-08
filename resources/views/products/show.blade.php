@@ -87,7 +87,7 @@
 
                 {{-- Add to Cart Form --}}
                 @if($product->stock > 0)
-                    <form action="{{ route('cart.add') }}" method="POST" class="d-flex align-items-end gap-3 flex-wrap">
+                    <form id="addToCartForm" action="{{ route('cart.add') }}" method="POST" class="d-flex align-items-end gap-3 flex-wrap">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
                         <div>
@@ -215,4 +215,64 @@
         </section>
     @endif
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addToCartForm = document.getElementById('addToCartForm');
+    if (addToCartForm) {
+        addToCartForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const form = this;
+            const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Ekleniyor...';
+            
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: formData
+            })
+            .then(response => response.json().then(data => ({ status: response.status, body: data })))
+            .then(result => {
+                const data = result.body;
+                if(result.status === 200 && data.success) {
+                    // Update badge
+                    let cartBtn = document.querySelector('a[href="{{ route(\'cart.index\') }}"]');
+                    if (cartBtn) {
+                        let badge = cartBtn.querySelector('.cart-badge');
+                        if(!badge) {
+                            badge = document.createElement('span');
+                            badge.className = 'cart-badge';
+                            cartBtn.appendChild(badge);
+                        }
+                        badge.innerText = data.cartCount;
+                    }
+                    alert(data.message || 'Ürün sepete eklendi!');
+                } else {
+                    alert(data.message || 'Bir hata oluştu.');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Sunucu ile bağlantı kurulamadı.');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        });
+    }
+});
+</script>
+@endpush
+
 @endsection
