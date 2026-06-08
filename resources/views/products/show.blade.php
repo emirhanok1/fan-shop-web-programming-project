@@ -246,7 +246,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = result.body;
                 if(result.status === 200 && data.success) {
                     // Update badge
-                    let cartBtn = document.querySelector('a[href="{{ route(\'cart.index\') }}"]');
+                    let cartBtn = document.querySelector('a[href="{{ route('cart.index') }}"]');
                     if (cartBtn) {
                         let badge = cartBtn.querySelector('.cart-badge');
                         if(!badge) {
