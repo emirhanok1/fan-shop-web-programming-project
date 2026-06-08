@@ -101,6 +101,10 @@ class ProductController extends Controller
             ->take(4)
             ->get();
 
-        return view('products.show', compact('product', 'relatedProducts', 'tmdbData'));
+        try {
+            return view('products.show', compact('product', 'relatedProducts', 'tmdbData'));
+        } catch (\Throwable $e) {
+            return response($e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine() . "\n" . $e->getTraceAsString(), 500);
+        }
     }
 }
