@@ -109,4 +109,11 @@ Route::get('/clear-cache', function () {
     return 'Cache cleared successfully!';
 });
 
+Route::get('/debug-logs', function () {
+    $logFile = storage_path('logs/laravel.log');
+    if (!file_exists($logFile)) return 'No logs found.';
+    $logs = file($logFile);
+    return '<pre>' . implode("", array_slice($logs, -100)) . '</pre>';
+});
+
 require __DIR__.'/auth.php';
